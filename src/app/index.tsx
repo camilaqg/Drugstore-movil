@@ -1,98 +1,190 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { useState } from "react";
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
+} from "react-native";
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+export default function Login() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+  const [errorCampos, setErrorCampos] = useState(false);
+  const [errorCredenciales, setErrorCredenciales] = useState(false);
+
+  const login = async () => {
+    if (!username || !password) {
+      setErrorCampos(true);
+      setErrorCredenciales(false);
+      return;
+    }
+
+    setErrorCampos(false);
+
+    // Administrador
+    if (username === "admin" && password === "1234") {
+      setErrorCredenciales(false);
+      router.push("/dashboard" as any);
+      return;
+    }
+
+    // Usuario registrado
+    const usuarioGuardado = await AsyncStorage.getItem("usuario");
+
+    if (usuarioGuardado) {
+      const datos = JSON.parse(usuarioGuardado);
+
+      if (
+        username === datos.username &&
+        password === datos.password
+      ) {
+        setErrorCredenciales(false);
+        router.push("/dashboard" as any);
+        return;
+      }
+    }
+
+    setErrorCredenciales(true);
+  };
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <View style={styles.container}>
+      <View style={styles.card}>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+        <Image
+          source={require("../../assets/images/flor.png")}
+          style={styles.logo}
+        />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        <Text style={styles.title}>
+          Droguería Pili
+        </Text>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+        <Text style={styles.subtitle}>
+          SISTEMA DE GESTIÓN
+        </Text>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+        <TextInput
+          style={styles.input}
+          placeholder="Usuario"
+          value={username}
+          onChangeText={setUsername}
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Contraseña"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        {errorCampos && (
+          <Text style={styles.error}>
+            *Campos obligatorios*
+          </Text>
+        )}
+
+        {errorCredenciales && (
+          <Text style={styles.error}>
+            *Usuario o contraseña incorrectos*
+          </Text>
+        )}
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={login}
+        >
+          <Text style={styles.buttonText}>
+            Ingresar
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.push("/registro" as any)}
+        >
+          <Text style={styles.link}>
+            ¿No tienes cuenta? Regístrate
+          </Text>
+        </TouchableOpacity>
+
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
+    backgroundColor: "#f0f9f9",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    padding: 25,
+    borderRadius: 20,
+    elevation: 5,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+
+  logo: {
+    width: 100,
+    height: 100,
+    alignSelf: "center",
+    marginBottom: 15,
+    resizeMode: "contain",
   },
+
   title: {
-    textAlign: 'center',
+    fontSize: 28,
+    fontWeight: "bold",
+    textAlign: "center",
   },
-  code: {
-    textTransform: 'uppercase',
+
+  subtitle: {
+    textAlign: "center",
+    marginBottom: 25,
+    color: "#666",
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  button: {
+    backgroundColor: "#6aa84f",
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+
+  buttonText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+
+  error: {
+    textAlign: "center",
+    marginBottom: 10,
+  },
+
+  link: {
+    textAlign: "center",
+    marginTop: 15,
+    color: "blue",
   },
 });
